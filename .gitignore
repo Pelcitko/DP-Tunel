@@ -143,4 +143,5 @@ ToyBox/secret_of_settings.py
 *.ppk
 
 # big file and trash, or stash
+tmp/*
 *.sql
