@@ -1,0 +1,154 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+{% block extrahead %}
+{#    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>#}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css" />
+{#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2/Chart.min.css" />#}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script>
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>#}
+{#    <script src="http://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/0.6.6/chartjs-plugin-zoom.js"></script>#}
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-crosshair"></script>
+    <script>
+        var randomColorGenerator = function () {
+            return '#' + (Math.random().toString(16) + '0000000').slice(2, 8);
+        };
+        var options = {
+            {#responsive: true,#}
+            {#maintainAspectRatio: true,#}
+            {#legend: {#}
+            {#    position: 'top'#}
+            {# },#}
+            title: {
+                display: true
+             },
+            animation: {
+                animateScale: true,
+                animateRotate: true
+             },
+            {#plugins: {#}
+            {#  crosshair: {#}
+            {#    sync: {#}
+            {#      enabled: false#}
+            {#    },#}
+            {#  }#}
+            {# },#}
+            tooltips: {
+              mode: "interpolate",
+              {#intersect: false,#}
+              {#callbacks: {#}
+              {#  title: function(a, d) {#}
+              {#    return a[0].xLabel.format('dd D MMM YYYY HH:mm')#}
+              {#  },#}
+              {#  label: function(i, d) {#}
+              {#    return (#}
+              {#      d.datasets[i.datasetIndex].label + ": " + i.yLabel.toFixed(2)#}
+              {#    );#}
+              {#  }#}
+              {# }#}
+             },
+            scales: {
+              xAxes: [{
+                type: 'time'
+              }],
+              {#yAxes: [{#}
+              {#  ticks: {#}
+              {#    min: -3,#}
+              {#    max: 4#}
+              {#  }#}
+              {# }]#}
+             },
+            {#scales: {#}
+            {#    xAxes: [{#}
+            {#        type: 'time',#}
+            {#        distribution: 'series',#}
+            {#        ticks: {#}
+            {#            autoSkip: true,#}
+            {#            // Include a dollar sign in the ticks#}
+            {#            callback: function(value, index, values) {#}
+            {#                return '$' + value;#}
+            {#             }#}
+            {#         },#}
+            {#        time: {#}
+            {#            unit: 'month'#}
+            {#         }#}
+            {#    }]#}
+            {# },#}
+            {# Zoom from hammer.min.js:#}
+            {#zoom: {#}
+            {#    enabled: true,#}
+            {#    drag: true,#}
+            {#    mode: 'xy', // or 'x' for "drag" version#}
+            {# },#}
+        };
+        window.onload = function () {
+            var ctx = document.getElementById("chart_1");
+{#            {% regroup cl.queryset by time_received as first_list %}#}
+            var lineChart = new Chart(ctx, {
+                type: 'bar',
+                {#type: 'line',#}
+{#                type: 'scatter',#}
+                data: {
+                    labels: [{% for item in cl.queryset %}'{{ item.time }}',{% endfor %}],
+                    datasets: [{
+                        label: "prr",
+                        data: [{% for item in cl.queryset %}'{{ item.value|floatformat }}',{% endfor %}],
+                        {#backgroundColor: randomColorGenerator(),#}
+                        backgroundColor: 'pink',
+                        borderColor: 'red',
+                        pointRadius: 1,
+                        interpolate: true,
+                        showLine: true,
+                        fill: true,
+                        type: 'line',
+                    }]
+                },
+                options: options,
+            });
+            {#ctx = document.getElementById("language-chart");#}
+            {#{% regroup cl.queryset|dictsort:"grades" by grades as grades_list %}#}
+            {#lineChart = new Chart(ctx, {#}
+            {#    type: 'doughnut',#}
+            {#    data: {#}
+            {#        labels: [{% for grade in grades_list %}'{{ grade.grouper }}',{% endfor %}],#}
+            {#        datasets: [{#}
+            {#            data: [{% for grade in grades_list %}'{{ grade.list|length }}',{% endfor %}],#}
+            {#            backgroundColor: [{% for grades in grades_list %}randomColorGenerator(),{% endfor %}]#}
+            {#        }]#}
+            {#    }, options: options#}
+            {# });#}
+            {#ctx = document.getElementById("grades-chart");#}
+            {#{% regroup cl.queryset|dictsort:"language" by get_language_display as language_list %}#}
+            {#lineChart = new Chart(ctx, {#}
+            {#    type: 'doughnut',#}
+            {#    data: {#}
+            {#        labels: [{% for language in language_list %}'{{ language.grouper }}',{% endfor %}],#}
+            {#        datasets: [{#}
+            {#            data: [{% for language in language_list %}'{{ language.list|length }}',{% endfor %}],#}
+            {#            backgroundColor: [{% for language in language_list %}randomColorGenerator(),{% endfor %}]#}
+            {#        }]#}
+            {#    }, options: options#}
+            {# });#}
+        }
+    </script>
+{% endblock %}
+{% block content %}
+    <div>
+{#        <div class="col-sm-4">#}
+{#            <p>tady#}
+{#                {% for item in cl.queryset %}#}
+{#                    * {{ item}} ({{ item.time }}, {{ item.value }}) <br>#}
+{#                {% endfor %}#}
+{#                tady</p>#}
+            <canvas id="chart_1" style="margin-bottom: 30px; width: 60%; height: 50%;"></canvas>
+{#        </div>#}
+{#        <div class="col-sm-4">#}
+{#            <canvas id="language-chart" style="width: 100px !important;"></canvas>#}
+{#        </div>#}
+{#        <div class="col-sm-4">#}
+{#            <canvas id="grades-chart" style="width: 100px !important;"></canvas>#}
+{#        </div>#}
+    </div>
+    {{ block.super }}
+{% endblock %}

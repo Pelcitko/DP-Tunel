@@ -1,0 +1,11 @@
+{% load humanize filters_extras l10n %}
+
+<div class="bar" style="height:{{ d.pct|unlocalize }}%;background-color:{{ color }};{{ add_style }}">
+    <div class="bar-tooltip">
+        <a href="{{ d.period|date:"?\u\p\d\a\t\e\d__\d\a\y=d&\u\p\d\a\t\e\d__\m\o\n\t\h=m&\u\p\d\a\t\e\d__\y\e\a\r=Y" }}">
+            <b>{{d.value|default:0|intcomma }} {{chart.unit}}</b><br>
+        </a>
+        <small>{{period|date:"D,j.E.y"}}</small>
+    </div>
+    <span>{# zobáček obláčku #}</span>
+</div>

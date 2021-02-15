@@ -1,0 +1,29 @@
+{% extends "admin/change_list.html" %}
+{% load static  admin_list i18n  cache %}
+
+{% get_current_language as LANGUAGE_CODE %}
+{#{% block extrahead %}#}
+
+{#{% endblock %}#}
+
+
+
+{% block filters %}
+    {% cache 1200 admin_filters LANGUAGE_CODE request.GET.items request.path request.user.username %}
+{#    {% cache 1800 admin_filters LANGUAGE_CODE request.get_full_path %}#}
+        {{ block.super }}
+    {% endcache %}
+{% endblock %}
+
+{% block content %}
+    <div>
+        <img src="{% static "tunel.svg" %}" alt="Chéma tunelu" loading="lazy" style="width: 100%; padding-bottom: 24px">
+    </div>
+    {{ block.super }}
+{% endblock %}
+{##}
+{% block pagination %}
+    {% cache 1600 admin_pagination request.get_full_path %}
+        {{ block.super }}
+    {% endcache %}
+{% endblock %}
