@@ -16,13 +16,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-import settings
+import ToyBox.settings as Settings
 
 urlpatterns = [
     path('', admin.site.urls),
 ]
 
-if settings.DEBUG:
+if Settings.DEBUG:
     import debug_toolbar
     urlpatterns = [
         path('__debug__/', include(debug_toolbar.urls)),

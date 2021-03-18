@@ -212,3 +212,95 @@ class Uzivatel(models.Model):
         db_table = 'uzivatel'
         verbose_name = 'Uživatel'
         verbose_name_plural = 'Uživatelé'
+
+
+
+#-------- VIEW -------------------
+
+
+class ViewOdbcData(models.Model):
+    sensor_number = models.IntegerField(blank=True, null=True, verbose_name='senzor')
+    time = models.DateTimeField(unique=True)
+    value = models.FloatField()
+    device_number = models.IntegerField(blank=True, null=True)
+
+    def __str__(self):      # __unicode__ on Python 2
+        return "{:.2f} {}".format(self.value, self.device_number)
+
+    class Meta:
+        app_label = 'mybox'
+        managed = False     # Django nebude pomocí manage.py ovlivňovat tuto tabulku
+        db_table = 'view_odbc_data'
+        # unique_together = ['time', 'sensor_number'] #Django neumí složené klíče
+        verbose_name = 'Pohled odbc data'
+        verbose_name_plural = 'Pohled odbc data'
+
+class ViewAllData(models.Model):
+    time = models.DateTimeField()
+    value = models.FloatField()
+    id_data = models.IntegerField(unique=True, primary_key=True)
+    type_number = models.IntegerField(blank=True, null=True)
+    point_number = models.IntegerField(blank=True, null=True)
+    bin_data = models.BinaryField(blank=True, null=True)
+    device_number = models.IntegerField(blank=True, null=True)
+    exponent10 = models.IntegerField()
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField(blank=True, null=True)
+    datasize = models.IntegerField(blank=True, null=True)
+    sensor_number = models.IntegerField(blank=True, null=True, verbose_name='senzor')
+    point_cs = models.CharField(max_length=255)
+    code_cs = models.CharField(max_length=32)
+    title_cs = models.CharField(max_length=255, blank=True, null=True)
+    device_cs = models.CharField(max_length=255, verbose_name='přístroj')
+    magnitude_cs = models.CharField(max_length=255, verbose_name='veličina')
+    unit_cs = models.CharField(max_length=64, blank=True, null=True, verbose_name='jednotka')
+    id_sensor = models.IntegerField('Sensor', blank=True, null=True)
+
+
+    def __str__(self):      # __unicode__ on Python 2
+        return "{:.2f} {}".format(10**self.exponent10*self.value, self.unit_cs)
+
+    class Meta:
+        app_label = 'mybox'
+        managed = False     # Django nebude pomocí manage.py ovlivňovat tuto tabulku
+        db_table = 'view_all_data'
+        verbose_name = 'Všechna data'
+        verbose_name_plural = 'Všechna data'
+
+    def _get_data_as_link(self):
+        return mark_safe('<a href="{}">{} {}</a>'.format(
+            reverse("admin:mybox_data_change", args=(self.id_data,)),
+            self.value, self.unit_cs
+        ))
+    _get_data_as_link.allow_tags = True
+    _get_data_as_link.short_description = "Data"
+    data_as_link = property(_get_data_as_link) # mělo by být asi rychlejší
+
+    def id_sensor_as_link(self):
+        return mark_safe('<a href="/mybox/sensor/{}/">{} – {}</a>'
+                         .format(self.id_sensor, self.id_sensor, self.sensor_number))
+    id_sensor_as_link.allow_tags = True
+    id_sensor_as_link.short_description = "Senzor (num)"
+    id_sensor_as_link.admin_order_field = "id_sensor"
+
+    def sensor_as_link(self):
+        sen = Sensor.objects.get(pk=self.id_sensor)
+        return mark_safe('<a href="{}">{}</a>'.format(
+            reverse("admin:mybox_sensor_change", args=(sen.id_sensor,)),
+            sen,))
+    sensor_as_link.allow_tags = True
+    sensor_as_link.short_description = "Senzor"
+
+    def device_number_as_link(self):
+        return mark_safe('<a href="/mybox/device/{}/">{} – {}</a>'.format(
+            self.device_number, self.device_number, self.device_cs))
+    device_number_as_link.allow_tags = True
+    device_number_as_link.short_description = "Přístroj (num)"
+
+    def device_as_link(self):
+        devices = Device.objects.get(pk=self.device_number)
+        return mark_safe('<a href="{}">{}</a>'.format(
+            reverse("admin:mybox_device_change", args=(devices.id_device,)),
+            devices))
+    device_as_link.allow_tags = True
+    device_as_link.short_description = "Přístroj"

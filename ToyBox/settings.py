@@ -13,7 +13,8 @@ import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-import secret_of_settings
+# from secret_of_settings import SECRET_KEY, DEFAULT_DATABASES_PASSWORD
+import ToyBox.secret_of_settings as Secret
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,13 +24,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECRET_KEY = os.environ.get('SECRET_KEY', 'fifty_random_characters')
-SECRET_KEY = secret_of_settings.SECRET_KEY
+SECRET_KEY = Secret.SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-INTERNAL_IPS = ('127.0.0.1',)
-ALLOWED_HOSTS = ['141.101.96.28', '147.230.157.84', ]
+INTERNAL_IPS = ('127.0.0.1', '0.0.0.0', '147.230.21.145',)
+ALLOWED_HOSTS = ['141.101.96.28', '147.230.157.84', 'bedrichov2.tul.cz', '147.230.21.145',]
 if DEBUG:
     ALLOWED_HOSTS += ['127.0.0.1', 'localhost', ]
 
@@ -71,7 +72,7 @@ DEBUG_TOOLBAR_PANELS = [
     'debug_toolbar.panels.sql.SQLPanel',
     'debug_toolbar.panels.staticfiles.StaticFilesPanel',
     'debug_toolbar.panels.templates.TemplatesPanel',
-    # 'debug_toolbar.panels.cache.CachePanel',
+    'debug_toolbar.panels.cache.CachePanel',
     'debug_toolbar.panels.signals.SignalsPanel',
     'debug_toolbar.panels.logging.LoggingPanel',
     # 'debug_toolbar.panels.redirects.RedirectsPanel',
@@ -79,7 +80,6 @@ DEBUG_TOOLBAR_PANELS = [
 
 DEBUG_TOOLBAR_CONFIG = {
     'INTERCEPT_REDIRECTS': False,
-
 }
 
 ROOT_URLCONF = 'ToyBox.urls'
@@ -113,7 +113,7 @@ CACHES = {
     # },
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        # 'LOCATION': 'D:/LP/Documents/School/TUL/dp/tmp',
+        # 'LOCATION': './tmp',
         'LOCATION': 'C:/Users/lukas/Documents/works/Django/ToyBox/tmp',
     }
 }
@@ -134,13 +134,22 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'pst',
         'USER': 'postgres',
-        # 'PASSWORD': os.environ.get('DEFAULT_DATABASES_PASSWORD'),
-        'PASSWORD': secret_of_settings.DEFAULT_DATABASES_PASSWORD,
+        'PASSWORD': Secret.DEFAULT_DATABASES_PASSWORD,
         'HOST': 'pg-prod2.nti.tul.cz',
         'PORT': '5432',
         'OPTIONS': {'options': '-c search_path=measurement'},
         'schemas': ['measurement', ],
-    }
+    },
+    # 'mybox': {
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': 'pst',
+    #     'USER': 'postgres',
+    #     # 'PASSWORD': 'Ubuntu',
+    #     'HOST': '127.0.0.1',
+    #     'PORT': '5433',
+    #     'OPTIONS': {'options': '-c search_path=measurement'},
+    #     'schemas': ['measurement', ],
+    # }
 }
 
 IMPORT_EXPORT_USE_TRANSACTIONS = True
@@ -166,15 +175,18 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'cs-cz'
 # TIME_ZONE = 'UTC'
 TIME_ZONE = 'Europe/Prague'
+FIRST_DAY_OF_WEEK = 1
 
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+STATIC_ROOT = BASE_DIR / 'static/'

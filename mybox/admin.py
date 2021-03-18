@@ -7,16 +7,14 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.core.paginator import Paginator
 from django.db import transaction, connection, OperationalError
 from django.db.models import Count, ExpressionWrapper, Avg, DateTimeField, Min, Max
-from django.db.models.functions import TruncDay, Trunc, TruncHour
-from django.urls import reverse
+from django.db.models.functions import TruncDay, Trunc
 from django.utils import timezone
 from django.utils.functional import cached_property
 from import_export.admin import ImportExportMixin, ImportExportModelAdmin, ExportMixin, ExportActionMixin
 
-import settings
 from mybox.models import *
+from mybox.tools import positive_sgn
 # Register your models here.
-from tools import positive_sgn
 
 admin.site.site_header = 'Vodárenský přivaděč Bedřichov'
 admin.site.site_title = 'Přivaděč Bedřichově'
@@ -61,7 +59,7 @@ class TimeLimitedPaginator(Paginator):
                     cursor.execute('SET LOCAL statement_timeout TO 1000;')
                     return super().count
             except OperationalError:
-                print('Paginátoru skončil limit')
+                print('Paginátoru skončil limit ({})'.format(self.object_list))
                 return 99999999
             except SyntaxError:
                 print('SyntaxError db:{}'.format(self.object_list.db))
@@ -70,25 +68,18 @@ class TimeLimitedPaginator(Paginator):
             print('Není MyBox')
             return super().count
 
-
-#_________________register_models____________________________
-
-@admin.register(Data)
-class DataAdmin(ExportActionMixin, DefaultFilterAdmin):
-    paginator = TimeLimitedPaginator
+class ChartAdmin(ExportActionMixin, admin.ModelAdmin,):
+    """
+    This is intended to be mixed with django.contrib.admin.ModelAdmin
+    https://docs.djangoproject.com/en/def/ref/contrib/admin/#modeladmin-objects
+    """
     change_list_template = 'admin/change_list_chartjs.html'
-    list_per_page = 25
-    default_filters = ('time_received__gte={}+00:00'.format(timezone.now().date()-timedelta(weeks=100)),)
-    list_display = ['id_sensor', 'time', 'value', 'unit', 'calculate_flow', 'type_number', 'point_number',
-                    'sensor_number', 'device_number',]
-    list_filter = ["id_sensor","id_sensor__id_magnitude","point_number",'device_number','sensor_number',]
-    # date_hierarchy = 'time_received'
-    show_full_result_count = False
+    change_list_parent = 'admin/import_export/change_list_import_export.html'
 
     def changelist_view(self, request, extra_context=None):
-        response = super().changelist_view(request,extra_context=extra_context)
+        response = super().changelist_view(request, extra_context=extra_context)
         try:
-            qs = response.context_data['cl'].queryset #
+            qs = response.context_data['cl'].queryset
             get_params = request.GET
         except (AttributeError, KeyError):
             return response
@@ -111,10 +102,66 @@ class DataAdmin(ExportActionMixin, DefaultFilterAdmin):
         chart_data = chart_data[:1000]
 
         as_json = json.dumps(list(chart_data), cls=DjangoJSONEncoder)
-        extra_context = extra_context or {"chart_data": as_json}
+        context = {
+            "chart_data": as_json,
+            "parent_template": self.change_list_parent,
+        }
+        extra_context = extra_context or context
     #
     #     # Call the superclass changelist_view to render the page
         return super().changelist_view(request, extra_context)
+
+
+#_________________register_models____________________________
+
+@admin.register(ViewAllData)
+class AllDataAdmin(ChartAdmin, ):
+    change_list_template = 'admin/change_list_chartjs.html'
+    list_per_page = 50
+    # show_full_result_count = False
+    # paginator = TimeLimitedPaginator
+    list_filter = ["id_sensor","magnitude_cs","point_number",'device_number','sensor_number',]
+    # list_display = ['time','data_as_link','bin_data','point_number','type_number','sensor_number','device_number','point_number',]
+    list_display = ['id_sensor', 'time', 'data_as_link', 'calculate_flow', 'point_number', 'type_number',
+                    'id_sensor_as_link', 'device_number_as_link', 'point_number', ]
+
+
+    def calculate_flow(self, obj:Data):
+
+        unit = "ml/s"
+        if   obj.id_sensor == 178:
+            k = 34.5 #pro senzor 178
+            comp_value = k * sqrt(obj.value/1000)
+        elif obj.id_sensor == 172:
+            val = obj.value
+            # comp_value = positive_sgn(val-38)
+            # unit = val-38
+            comp_value = 82.2 * (
+                    sqrt(val/1000) +
+                    2*sqrt(0.5*(positive_sgn(val-38))*(val-38)/1000) +
+                    sqrt(0.5*(positive_sgn(val-200))*(val-200)/1000)
+            )
+        else:
+            return '{:.4} {}'.format(obj.value, obj.unit_cs)
+        return '{:.4} {}'.format(comp_value, unit)
+    calculate_flow.short_description = "hodnota"
+    calculate_flow.admin_order_field = "value"
+
+
+@admin.register(Data)
+class DataAdmin(ChartAdmin, ):
+    change_list_template = 'admin/change_list_chartjs.html'
+    list_per_page = 50
+    # show_full_result_count = False
+    # paginator = TimeLimitedPaginator
+    default_filters = ('time_received__gte={}+00:00'.format(timezone.now().date()-timedelta(weeks=100)),)
+    list_display = ['id_sensor', 'time', 'value', 'unit', 'calculate_flow', 'type_number', 'point_number',
+                    'sensor_number', 'device_number', ]
+    list_filter = ["id_sensor","id_sensor__id_magnitude","point_number",'device_number','sensor_number',]
+    # date_hierarchy = 'time_received'
+    # list_select_related = ('id_sensor',) # -[list_per_page] query
+    list_select_related = ('id_sensor','id_sensor__id_magnitude') # -[list_per_page] query
+
 
 
     def unit(self, obj:Data):
@@ -125,7 +172,7 @@ class DataAdmin(ExportActionMixin, DefaultFilterAdmin):
     def calculate_flow(self, obj:Data):
 
         unit = "ml/s"
-        if  obj.id_sensor.id_sensor == 178:
+        if   obj.id_sensor.id_sensor == 178:
             k = 34.5 #pro senzor 178
             comp_value = k * sqrt(obj.value/1000)
         elif obj.id_sensor.id_sensor == 172:
@@ -177,11 +224,12 @@ class SensorAdmin(ImportExportMixin, DefaultFilterAdmin):
     # paginator = TimeLimitedPaginator
     list_display = ['id_sensor', 'sensor_number', 'note', 'get_device_as_link',
                     'get_magnitude_as_link', 'get_point_as_link', 'get_measurement_as_link', ]
-    inlines = [DataInline, ]
+    # inlines = [DataInline, ]
 
 
 # admin.site.register(Data)
 admin.site.register(DataOld)
+# admin.site.register(ViewAllData)
 admin.site.register(Device)
 admin.site.register(Logs)
 # admin.site.register(Magnitude)
