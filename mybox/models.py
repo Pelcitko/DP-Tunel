@@ -43,8 +43,8 @@ class Point(models.Model):
         app_label = 'mybox'
         managed = False
         db_table = 'point'
-        verbose_name = u'Body měření'
-        verbose_name_plural = u'Bod měření'
+        verbose_name = 'Body měření'
+        verbose_name_plural = 'Bod měření'
 
 class Device(models.Model):
     id_device = models.AutoField(primary_key=True)
@@ -93,7 +93,7 @@ class Sensor(models.Model):
     valid_to   = models.DateTimeField(blank=True, null=True)
     id_measurement = models.ForeignKey(Measurement, models.DO_NOTHING, db_column='id_measurement')
     datasize = models.IntegerField(blank=True, null=True)
-    sensor_number = models.IntegerField(blank=True, null=True,verbose_name='senzor')
+    sensor_number = models.IntegerField(blank=True, null=True, verbose_name='senzor')
     id_magnitude_raw = models.IntegerField(blank=True, null=True) # nepoužívané ..je to prázdné
     serial_number = models.CharField(max_length=250, blank=True, null=True)
     note = models.TextField(blank=True, null=True,verbose_name='Poznámka')
@@ -144,10 +144,10 @@ class Data(models.Model):
     value = models.FloatField()
     id_data = models.AutoField(primary_key=True)
     type_number = models.IntegerField(blank=True, null=True)
-    point_number = models.IntegerField(blank=True, null=True)
-    sensor_number = models.IntegerField(blank=True, null=True)
+    point_number = models.IntegerField(blank=True, null=True, verbose_name='body měření')
+    sensor_number = models.IntegerField(blank=True, null=True, verbose_name="čísla senzorů")
     bin_data = models.BinaryField(blank=True, null=True)
-    device_number = models.IntegerField(blank=True, null=True)
+    device_number = models.IntegerField(blank=True, null=True, verbose_name='čísla zařízení')
     value_raw = models.FloatField(blank=True, null=True)
     time_received = models.DateTimeField(verbose_name="Čas příchodu")
 
@@ -276,20 +276,31 @@ class ViewAllData(models.Model):
     _get_data_as_link.short_description = "Data"
     data_as_link = property(_get_data_as_link) # mělo by být asi rychlejší
 
-    def id_sensor_as_link(self):
-        return mark_safe('<a href="/mybox/sensor/{}/">{} – {}</a>'
-                         .format(self.id_sensor, self.id_sensor, self.sensor_number))
-    id_sensor_as_link.allow_tags = True
-    id_sensor_as_link.short_description = "Senzor (num)"
-    id_sensor_as_link.admin_order_field = "id_sensor"
+    # def id_sensor_as_link(self):
+    #     return mark_safe('<a href="/mybox/sensor/{}/">{} – {}</a>'
+    #                      .format(self.id_sensor, self.id_sensor, self.sensor_number))
+    # id_sensor_as_link.allow_tags = True
+    # id_sensor_as_link.short_description = "Senzor (num)"
+    # id_sensor_as_link.admin_order_field = "id_sensor"
+
 
     def sensor_as_link(self):
+        return mark_safe('<a href="{}">{}/{}</a>'.format(
+            reverse("admin:mybox_sensor_change", args=(self.id_sensor,)),
+            self.id_sensor, self.sensor_number))
+    sensor_as_link.allow_tags = True
+    sensor_as_link.short_description = "Senzor/num"
+    sensor_as_link.admin_order_field = "id_sensor"
+
+    # násobně více dotazů
+    def id_sensor_as_link(self):
         sen = Sensor.objects.get(pk=self.id_sensor)
         return mark_safe('<a href="{}">{}</a>'.format(
             reverse("admin:mybox_sensor_change", args=(sen.id_sensor,)),
             sen,))
-    sensor_as_link.allow_tags = True
-    sensor_as_link.short_description = "Senzor"
+    id_sensor_as_link.allow_tags = True
+    id_sensor_as_link.short_description = "Senzor"
+    id_sensor_as_link.admin_order_field = "id_sensor"
 
     def device_number_as_link(self):
         return mark_safe('<a href="/mybox/device/{}/">{} – {}</a>'.format(

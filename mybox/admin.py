@@ -2,6 +2,8 @@ import sys
 from datetime import timedelta
 from math import sqrt
 import json
+
+from daterangefilter.filters import PastDateRangeFilter
 from django.contrib import admin
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.paginator import Paginator
@@ -11,6 +13,7 @@ from django.db.models.functions import TruncDay, Trunc
 from django.utils import timezone
 from django.utils.functional import cached_property
 from import_export.admin import ImportExportMixin, ImportExportModelAdmin, ExportMixin, ExportActionMixin
+from rangefilter.filter import DateRangeFilter, DateTimeRangeFilter
 
 from mybox.models import *
 from mybox.tools import positive_sgn
@@ -75,6 +78,9 @@ class ChartAdmin(ExportActionMixin, admin.ModelAdmin,):
     """
     change_list_template = 'admin/change_list_chartjs.html'
     change_list_parent = 'admin/import_export/change_list_import_export.html'
+    x_field = 'time'
+    limit = None
+    trunc_kind = 'day',  # 'year','quarter','month','week','day','week_day','date','time','hour','minute','second'
 
     def changelist_view(self, request, extra_context=None):
         response = super().changelist_view(request, extra_context=extra_context)
@@ -85,45 +91,54 @@ class ChartAdmin(ExportActionMixin, admin.ModelAdmin,):
             return response
 
         # pokud není vybrán exaktně jeden sensor
-        if 'id_sensor__id_sensor__exact' not in get_params:
-            return super().changelist_view(request, extra_context)
+        # if 'id_sensor__id_sensor__exact' not in get_params:
+        enable_for = ('id_sensor__id_sensor__exact', 'id_sensor', )
+        if all(param not in get_params for param in enable_for):
+            return response
+            # return super().changelist_view(request, extra_context)
 
         # # Aggregate new subscribers per day
+        # Vlastní perioda: https://stackoverflow.com/a/56466800/9942866
         chart_data = qs\
             .annotate(
                 period=Trunc(
-                    "time_received",
-                    kind='day', # 'year','quarter','month','week','day','week_day','date','time','hour','minute','second'
+                    self.x_field,
+                    *self.trunc_kind,
                 )
                     )\
             .values("period")\
             .annotate(y=Avg("value"), yMin=Min("value"), yMax=Max("value"))\
             .order_by("-period")
-        chart_data = chart_data[:1000]
+        chart_data = chart_data[:self.limit]
 
         as_json = json.dumps(list(chart_data), cls=DjangoJSONEncoder)
         context = {
             "chart_data": as_json,
-            "parent_template": self.change_list_parent,
+            "parent_template": self.change_list_parent or 'change_list.html',
         }
-        extra_context = extra_context or context
-    #
-    #     # Call the superclass changelist_view to render the page
-        return super().changelist_view(request, extra_context)
+        # extra_context = extra_context or context
+        response.context_data.update(context)
+        # response.context_data |= context  # Python 3.9+
+        return response
+        # Call the superclass changelist_view to render the page
+        # return super().changelist_view(request, extra_context)
 
 
 #_________________register_models____________________________
 
 @admin.register(ViewAllData)
-class AllDataAdmin(ChartAdmin, ):
-    change_list_template = 'admin/change_list_chartjs.html'
+class AllDataAdmin(ChartAdmin, DefaultFilterAdmin):
+    # x_field = 'time'
+    # change_list_template = 'admin/change_list_chartjs.html'
     list_per_page = 50
     # show_full_result_count = False
     # paginator = TimeLimitedPaginator
-    list_filter = ["id_sensor","magnitude_cs","point_number",'device_number','sensor_number',]
+    default_filters = ('time__gte={}'.format(timezone.now().date()-timedelta(weeks=100)),)
+    date_hierarchy = 'time'
+    list_filter = [('time', DateRangeFilter), "id_sensor", "magnitude_cs", "point_number", 'device_number', 'sensor_number', ]
     # list_display = ['time','data_as_link','bin_data','point_number','type_number','sensor_number','device_number','point_number',]
     list_display = ['id_sensor', 'time', 'data_as_link', 'calculate_flow', 'point_number', 'type_number',
-                    'id_sensor_as_link', 'device_number_as_link', 'point_number', ]
+                    'id_sensor_as_link', 'sensor_as_link',  'device_number_as_link', 'point_number', ]
 
 
     def calculate_flow(self, obj:Data):
@@ -149,18 +164,21 @@ class AllDataAdmin(ChartAdmin, ):
 
 
 @admin.register(Data)
-class DataAdmin(ChartAdmin, ):
-    change_list_template = 'admin/change_list_chartjs.html'
+class DataAdmin(ChartAdmin, DefaultFilterAdmin):
+    # change_list_template = 'admin/change_list_chartjs.html'
     list_per_page = 50
     # show_full_result_count = False
     # paginator = TimeLimitedPaginator
-    default_filters = ('time_received__gte={}+00:00'.format(timezone.now().date()-timedelta(weeks=100)),)
+    default_filters = ('time__gte={}'.format(timezone.now().date()-timedelta(weeks=100)),)
+    date_hierarchy = 'time'
     list_display = ['id_sensor', 'time', 'value', 'unit', 'calculate_flow', 'type_number', 'point_number',
                     'sensor_number', 'device_number', ]
-    list_filter = ["id_sensor","id_sensor__id_magnitude","point_number",'device_number','sensor_number',]
-    # date_hierarchy = 'time_received'
+    list_filter = [
+        ('time', DateRangeFilter), "id_sensor", "id_sensor__id_magnitude", "point_number",
+        # ('time', PastDateRangeFilter), 'device_number', 'sensor_number',
+                  ]
     # list_select_related = ('id_sensor',) # -[list_per_page] query
-    list_select_related = ('id_sensor','id_sensor__id_magnitude') # -[list_per_page] query
+    list_select_related = ('id_sensor', 'id_sensor__id_magnitude') # -[list_per_page] query
 
 
 

@@ -29,10 +29,13 @@ SECRET_KEY = Secret.SECRET_KEY
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-INTERNAL_IPS = ('127.0.0.1', '0.0.0.0', '147.230.21.145',)
-ALLOWED_HOSTS = ['141.101.96.28', '147.230.157.84', 'bedrichov2.tul.cz', '147.230.21.145',]
-if DEBUG:
-    ALLOWED_HOSTS += ['127.0.0.1', 'localhost', ]
+
+# INTERNAL_IPS = ('127.0.0.1', '0.0.0.0', '147.230.21.145', '141.101.96.28', '147.230.11.2', '185.155.32.6', '195.113.157.85', '147.230.11.99', '147.230.250.81', )
+INTERNAL_IPS = ('127.0.0.1', '147.230.88.184', '127.0.0.1:8000')
+# ALLOWED_HOSTS = ['141.101.96.28', '147.230.157.84', 'bedrichov2.tul.cz', '147.230.21.145',]
+ALLOWED_HOSTS = ['bedrichov2.tul.cz', '147.230.21.145',]
+# if DEBUG:
+ALLOWED_HOSTS += ['127.0.0.1', 'localhost', ]
 
 
 # Application definition
@@ -47,6 +50,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'mybox.apps.MyboxConfig',
 
+    'daterangefilter',
+    'rangefilter',
     'import_export',
     'debug_toolbar',
 ]
@@ -78,8 +83,14 @@ DEBUG_TOOLBAR_PANELS = [
     # 'debug_toolbar.panels.redirects.RedirectsPanel',
 ]
 
+def show_toolbar(request):
+    # return request.user.is_staff
+    return request.user.is_superuser
+
 DEBUG_TOOLBAR_CONFIG = {
-    'INTERCEPT_REDIRECTS': False,
+    'SHOW_TOOLBAR_CALLBACK': "ToyBox.settings.show_toolbar",
+    #'ENABLE_STACKTRACES_LOCALS': True,
+    # 'INTERCEPT_REDIRECTS': False,
 }
 
 ROOT_URLCONF = 'ToyBox.urls'
@@ -97,6 +108,13 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+            # SpeedUp!
+            # 'loaders': [
+            #     ('django.template.loaders.cached.Loader', [
+            #         'django.template.loaders.filesystem.Loader',
+            #         'django.template.loaders.app_directories.Loader',
+            #     ]),
+            # ],
         },
     },
 ]
@@ -113,8 +131,8 @@ CACHES = {
     # },
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        # 'LOCATION': './tmp',
-        'LOCATION': 'C:/Users/lukas/Documents/works/Django/ToyBox/tmp',
+        'LOCATION': BASE_DIR / 'tmp/',
+        # 'LOCATION': 'C:/Users/lukas/Documents/works/Django/ToyBox/tmp',
     }
 }
 
@@ -190,3 +208,4 @@ USE_TZ = False
 STATIC_URL = '/static/'
 # STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 STATIC_ROOT = BASE_DIR / 'static/'
+MEDIA_URL = '/files/'

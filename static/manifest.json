@@ -1,0 +1,16 @@
+{
+    "lang" : "Czech",
+    "name": "Vodárenský přivaděč Bedřichov",
+    "short_name": "Bedřichov",
+    "icons": [
+        {
+            "src": "/static/android-chrome-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#417690",
+    "background_color": "#79aec8",
+    "display": "minimal-ui",
+    "start_url": "http://bedrichov2.tul.cz//"
+}

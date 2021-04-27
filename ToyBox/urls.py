@@ -17,13 +17,15 @@ from django.contrib import admin
 from django.urls import path, include
 
 import ToyBox.settings as Settings
+import debug_toolbar
 
 urlpatterns = [
     path('', admin.site.urls),
+    path('__debug__/', include(debug_toolbar.urls)),
 ]
 
-if Settings.DEBUG:
-    import debug_toolbar
-    urlpatterns = [
-        path('__debug__/', include(debug_toolbar.urls)),
-    ] + urlpatterns
+# if Settings.DEBUG:
+#     import debug_toolbar
+#     urlpatterns = [
+#         path('__debug__/', include(debug_toolbar.urls)),
+#     ] + urlpatterns
