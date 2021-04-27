@@ -94,8 +94,8 @@ class ChartAdmin(ExportActionMixin, admin.ModelAdmin,):
         # if 'id_sensor__id_sensor__exact' not in get_params:
         enable_for = ('id_sensor__id_sensor__exact', 'id_sensor', )
         if all(param not in get_params for param in enable_for):
-            # return response
-            return super().changelist_view(request, extra_context)
+            return response
+            # return super().changelist_view(request, extra_context)
 
         # # Aggregate new subscribers per day
         # Vlastní perioda: https://stackoverflow.com/a/56466800/9942866
@@ -114,14 +114,15 @@ class ChartAdmin(ExportActionMixin, admin.ModelAdmin,):
         as_json = json.dumps(list(chart_data), cls=DjangoJSONEncoder)
         context = {
             "chart_data": as_json,
-            "parent_template": self.change_list_parent or 'change_list.html',
+            # "parent_template": self.change_list_parent or 'change_list.html',
+            "parent_template": 'admin/import_export/change_list_import_export.html',
         }
-        extra_context = extra_context or context
-        # response.context_data.update(context)
+        # extra_context = extra_context or context
+        response.context_data.update(context)
         # response.context_data |= context  # Python 3.9+
-        # return response
+        return response
         # Call the superclass changelist_view to render the page
-        return super().changelist_view(request, extra_context)
+        # return super().changelist_view(request, extra_context)
 
 
 #_________________register_models____________________________
