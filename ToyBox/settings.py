@@ -120,21 +120,21 @@ TEMPLATES = [
 ]
 
 
-CACHES = {
-    # 'default': {
-    #     'BACKEND': 'django_redis.cache.RedisCache',
-    #     'LOCATION': 'redis://127.0.0.1:6379',
-    #     'OPTIONS': {
-    #         'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-    #     },
-    #     'KEY_PREFIX': 'myBox'
-    # },
-    'default': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': BASE_DIR / 'tmp/',
-        # 'LOCATION': 'C:/Users/lukas/Documents/works/Django/ToyBox/tmp',
-    }
-}
+# CACHES = {
+#     # 'default': {
+#     #     'BACKEND': 'django_redis.cache.RedisCache',
+#     #     'LOCATION': 'redis://127.0.0.1:6379',
+#     #     'OPTIONS': {
+#     #         'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#     #     },
+#     #     'KEY_PREFIX': 'myBox'
+#     # },
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+#         'LOCATION': BASE_DIR / 'tmp/',
+#         # 'LOCATION': 'C:/Users/lukas/Documents/works/Django/ToyBox/tmp',
+#     }
+# }
 
 WSGI_APPLICATION = 'ToyBox.wsgi.application'
 
