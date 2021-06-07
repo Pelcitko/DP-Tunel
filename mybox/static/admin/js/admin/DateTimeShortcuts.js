@@ -312,10 +312,10 @@
             // calendar shortcuts
             const shortcuts = quickElement('div', cal_box);
             shortcuts.className = 'calendar-shortcuts';
-            let day_link = quickElement('a', shortcuts, gettext('Yesterday'), 'href', '#');
+            let day_link = quickElement('a', shortcuts, 'Před rokem', 'href', '#');
             day_link.addEventListener('click', function(e) {
                 e.preventDefault();
-                DateTimeShortcuts.handleCalendarQuickLink(num, -1);
+                DateTimeShortcuts.handleCalendarQuickLink(num, -364);
             });
             shortcuts.appendChild(document.createTextNode('\u00A0|\u00A0'));
             day_link = quickElement('a', shortcuts, gettext('Today'), 'href', '#');

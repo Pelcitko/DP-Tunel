@@ -1,0 +1,75 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list %}
+
+
+
+{% block extrahead %}
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/data.js"></script>
+    <script src="https://code.highcharts.com/stock/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/export-data.js"></script>
+{{ block.super }}
+    <script>
+Highcharts.dateFormat("%d.%m.%Y", 20, false);
+{#Highcharts.getJSON('/tunel/{{ preserved_filters }}', function (data) {#}
+Highcharts.getJSON('/tunel/chart/{{ request.GET.q }}/{{ request.GET.id_data__time__range__gte|default:"-" }}/{{ request.GET.id_data__time__range__lte|default:"-" }}/', function (data) {
+
+  console.log(data.range)
+  console.log(data.average)
+  Highcharts.stockChart('chart', {
+
+    title: {
+      text: 'Graf agregovaný po dnech'
+    },
+    xAxis: [{
+        //categories: 'datetime',
+        type: 'datetime',
+        title: {
+            text: 'Datum'
+        }
+    }],
+    yAxis: {
+        title: {
+            text: 'Teplota'
+        }
+    },
+    tooltip: {
+        crosshairs: true,
+        shared: true,
+        valueSuffix: '°C'
+    },
+    series: [{
+        name: 'Průměr',
+        data: data.average,
+        type: 'line', // 'spline', 'column'
+        zIndex: 1,
+        //yAxis: 1,
+    }, {
+        name: 'Extrémy',
+        data: data.range,
+        type: 'arearange', // 'areasplinerange'
+        lineWidth: 0,
+        linkedTo: ':previous',
+        zIndex: 0,
+        //yAxis: 1,
+    }]
+
+  });
+});
+    </script>
+{% endblock %}
+
+{% block content %}
+{#    <div>#}
+{#        <p> {{ chart_data|pprint }} </p>#}
+{#    </div>#}
+    <div id="chart"></div>
+        {{ block.super }}
+{% endblock %}
+
+{% block footer %}
+{#    {{ request.path }} | {{ request.path_info }} | {{ request.get_full_path }} | {{ request.GET }} | {{ request.resolver_match }} | {{ request.content_params }} | {{ request.GET.params }}#}
+        <img src="{% static "tunel.svg" %}" alt="Schéma tunelu" loading="lazy" style="width: 100%; padding-bottom: 16px">
+    {{ block.super }}
+{% endblock %}

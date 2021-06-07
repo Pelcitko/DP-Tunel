@@ -15,13 +15,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.decorators.cache import cache_page
 
 import ToyBox.settings as Settings
 import debug_toolbar
 
 urlpatterns = [
+    path('tunel/', include('mybox.urls')),
     path('', admin.site.urls),
     path('__debug__/', include(debug_toolbar.urls)),
+    # path('__debug__/', cache_page(3000), include(debug_toolbar.urls)), # podle mě to nic nedělá
 ]
 
 # if Settings.DEBUG:

@@ -6,7 +6,6 @@
 
 {% block extrahead %}
     {{ block.super }}
-    {% cache 1000 admin_chart request.get_full_path %}
 {#<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.css" integrity="sha512-/zs32ZEJh+/EO2N1b0PEdoA10JkdC3zJ8L5FTiQu82LR9S/rOQNfQN7U59U9BC12swNeRAz3HSzIL2vpp4fv3w==" crossorigin="anonymous" />#}
 {#<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>#}
 {#<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>#}
@@ -40,7 +39,9 @@
   {#  {"period": "2019-08-02T00:00:00Z", "y": 431},#}
   {#  {"period": "2019-08-01T00:00:00Z", "y": 431},#}
   {#];#}
-  const chartData = {{ chart_data | safe }};
+{#    {% cache 1800 admin_chart request.get_full_path %}#}
+        const chartData = {{ chart_data | safe | default:"null" }};
+{#    {% endcache %} NEFUNGUJE je voláno už ve view! #}
 
   // Parse the dates to JS
   chartData.forEach((d) => {
@@ -60,7 +61,7 @@ var config = {
           fill: '+2',
          },
         {
-          label: 'Průměr',
+          label: 'Průměr během dne',
           {#data: chartData,#}
           data: chartData.map((d) => ({t: d.x, y: d.y})),
           backgroundColor: 'rgba(220,20,20,0.5)',
@@ -72,14 +73,25 @@ var config = {
           fill: false,
         },
         {
-          label: 'Maximum',
+          label: 'Minimum a maximum',
           data: chartData.map((d) => ({t: d.x, y: d.yMax})),
           backgroundColor: 'rgba(121, 174, 200,0.5)',
+          borderColor: 'rgba(121, 174, 200,0.5)',
           fill: false,
          },
       ],
     },
     options: {
+          legend: {
+           labels: {
+               filter: function(legendItem, chartData) {
+                if (legendItem.datasetIndex === 0) {
+                  return false;
+                }
+               return true;
+               }
+            }
+        },
         maintainAspectRatio: false,
         responsive: true,
         animation: {
@@ -194,13 +206,12 @@ window.onload = function() {
 };
 
     </script>
-    {% endcache %}
 {% endblock %}
 
 
 {% block filters %}
 {#    {% cache 1200 admin_filters LANGUAGE_CODE request.GET.items request.path request.user.username %}#}
-    {% cache 1800 admin_filters LANGUAGE_CODE request.get_full_path %}
+    {% cache 3600 admin_filters LANGUAGE_CODE request.get_full_path %}
         {{ block.super }}
     {% endcache %}
 {% endblock %}
@@ -220,15 +231,15 @@ window.onload = function() {
     {#    <button id="reload">Reload chart data</button>#}
     {% endif %}
 
-    {% cache 60 admin_content LANGUAGE_CODE request.get_full_path %}
+    {% cache 90 admin_content LANGUAGE_CODE request.get_full_path %}
         {{ block.super }}
     {% endcache %}
 {% endblock %}
 
 {% block pagination %}
-    {% cache 1500 admin_pagination request.get_full_path %}
+{#    {% cache 5400 admin_pagination request.get_full_path %}#}
         {{ block.super }}
-    {% endcache %}
+{#    {% endcache %}#}
 {% endblock %}
 
 

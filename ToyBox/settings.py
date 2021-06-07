@@ -29,13 +29,10 @@ SECRET_KEY = Secret.SECRET_KEY
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-
-# INTERNAL_IPS = ('127.0.0.1', '0.0.0.0', '147.230.21.145', '141.101.96.28', '147.230.11.2', '185.155.32.6', '195.113.157.85', '147.230.11.99', '147.230.250.81', )
 INTERNAL_IPS = ('127.0.0.1', '147.230.88.184', '127.0.0.1:8000')
-# ALLOWED_HOSTS = ['141.101.96.28', '147.230.157.84', 'bedrichov2.tul.cz', '147.230.21.145',]
-ALLOWED_HOSTS = ['bedrichov2.tul.cz', '147.230.21.145',]
-# if DEBUG:
-ALLOWED_HOSTS += ['127.0.0.1', 'localhost', ]
+ALLOWED_HOSTS = ['bedrichov2.tul.cz', '147.230.21.145', ]
+if DEBUG:
+    ALLOWED_HOSTS += ['127.0.0.1', 'localhost', ]
 
 
 # Application definition
@@ -50,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'mybox.apps.MyboxConfig',
 
+    'admin_auto_filters',
     'daterangefilter',
     'rangefilter',
     'import_export',
@@ -59,7 +57,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.cache.UpdateCacheMiddleware',     # NEW - cache
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.cache.FetchFromCacheMiddleware',  # NEW - cache
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -69,7 +69,6 @@ MIDDLEWARE = [
 ]
 
 DEBUG_TOOLBAR_PANELS = [
-    'debug_toolbar.panels.versions.VersionsPanel',
     'debug_toolbar.panels.timer.TimerPanel',
     'debug_toolbar.panels.settings.SettingsPanel',
     'debug_toolbar.panels.headers.HeadersPanel',
@@ -80,7 +79,7 @@ DEBUG_TOOLBAR_PANELS = [
     'debug_toolbar.panels.cache.CachePanel',
     'debug_toolbar.panels.signals.SignalsPanel',
     'debug_toolbar.panels.logging.LoggingPanel',
-    # 'debug_toolbar.panels.redirects.RedirectsPanel',
+    'debug_toolbar.panels.redirects.RedirectsPanel',
 ]
 
 def show_toolbar(request):
@@ -92,6 +91,14 @@ DEBUG_TOOLBAR_CONFIG = {
     #'ENABLE_STACKTRACES_LOCALS': True,
     # 'INTERCEPT_REDIRECTS': False,
 }
+
+IMPORT_EXPORT_USE_TRANSACTIONS = True
+
+IMPORT_EXPORT_EXPORT_PERMISSION_CODE = 'change'
+IMPORT_EXPORT_IMPORT_PERMISSION_CODE = 'add'
+
+DATA_UPLOAD_MAX_MEMORY_SIZE     = None
+DATA_UPLOAD_MAX_NUMBER_FIELDS   = None
 
 ROOT_URLCONF = 'ToyBox.urls'
 
@@ -120,21 +127,27 @@ TEMPLATES = [
 ]
 
 
-# CACHES = {
-#     # 'default': {
-#     #     'BACKEND': 'django_redis.cache.RedisCache',
-#     #     'LOCATION': 'redis://127.0.0.1:6379',
-#     #     'OPTIONS': {
-#     #         'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-#     #     },
-#     #     'KEY_PREFIX': 'myBox'
-#     # },
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-#         'LOCATION': BASE_DIR / 'tmp/',
-#         # 'LOCATION': 'C:/Users/lukas/Documents/works/Django/ToyBox/tmp',
-#     }
-# }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    },
+    # 'default': {
+    #     'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+    #     'LOCATION': BASE_DIR / 'tmp/',
+    #     'TIMEOUT': 60, #default is 300 seconds (5 minut)
+    #     'OPTIONS': {
+    #         'MAX_ENTRIES': 100
+    #     }
+    # }
+    # 'default': {
+    #     'BACKEND': 'django_redis.cache.RedisCache',
+    #     'LOCATION': 'redis://127.0.0.1:6379',
+    #     'OPTIONS': {
+    #         'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+    #     },
+    #     'KEY_PREFIX': 'myBox'
+    # },
+}
 
 WSGI_APPLICATION = 'ToyBox.wsgi.application'
 
@@ -155,8 +168,8 @@ DATABASES = {
         'PASSWORD': Secret.DEFAULT_DATABASES_PASSWORD,
         'HOST': 'pg-prod2.nti.tul.cz',
         'PORT': '5432',
-        'OPTIONS': {'options': '-c search_path=measurement'},
-        'schemas': ['measurement', ],
+        'OPTIONS': {'options': '-c search_path=measurement,pg_catalog'},
+        'schemas': ['measurement', 'pg_catalog'],
     },
     # 'mybox': {
     #     'ENGINE': 'django.db.backends.postgresql',
@@ -170,7 +183,24 @@ DATABASES = {
     # }
 }
 
-IMPORT_EXPORT_USE_TRANSACTIONS = True
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'console': {
+#             'level': 'DEBUG',
+#             'class': 'logging.StreamHandler',
+#         },
+#     },
+#     'loggers': {
+#         'django': {
+#             'handlers': ['console'],
+#             'level': 'DEBUG',
+#             'propagate': False,
+#         },
+#     },
+# }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators

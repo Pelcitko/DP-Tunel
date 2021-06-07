@@ -5,9 +5,8 @@ from django.utils.safestring import mark_safe
 
 
 
-
 class Measurement(models.Model):
-    id_measurement = models.AutoField(primary_key=True)
+    id_measurement = models.AutoField(primary_key=True, verbose_name='id')
     title_cs = models.CharField(max_length=255, blank=True, null=True)
     description_cs = models.TextField(blank=True, null=True)
     code_cs = models.CharField(unique=True, max_length=32)
@@ -23,7 +22,7 @@ class Measurement(models.Model):
         managed = False
         db_table = 'measurement'
         verbose_name = 'Měření'
-        verbose_name_plural = 'Měření'
+        verbose_name_plural = verbose_name
 
 
 class Point(models.Model):
@@ -43,8 +42,8 @@ class Point(models.Model):
         app_label = 'mybox'
         managed = False
         db_table = 'point'
-        verbose_name = 'Body měření'
-        verbose_name_plural = 'Bod měření'
+        verbose_name = 'pozice'
+        verbose_name_plural = verbose_name
 
 class Device(models.Model):
     id_device = models.AutoField(primary_key=True)
@@ -60,8 +59,8 @@ class Device(models.Model):
         app_label = 'mybox'
         managed = False
         db_table = 'device'
-        verbose_name = 'Typ senzoru'
-        verbose_name_plural = 'Typy senzorů'
+        verbose_name = 'Zařízení'
+        verbose_name_plural = verbose_name
 
 class Magnitude(models.Model):
     id_magnitude = models.AutoField(primary_key=True)
@@ -85,13 +84,17 @@ class Magnitude(models.Model):
 
 class Sensor(models.Model):
     id_sensor = models.AutoField(primary_key=True, verbose_name='id')
-    id_device = models.ForeignKey(Device, models.DO_NOTHING, db_column='id_device', verbose_name='Přístroj')
-    id_magnitude = models.ForeignKey(Magnitude, models.DO_NOTHING, db_column='id_magnitude', verbose_name='Veličina')
-    id_point   = models.ForeignKey(Point, models.DO_NOTHING, db_column='id_point')
+    id_device = models.ForeignKey(Device, models.DO_NOTHING,
+                                  db_column='id_device', related_name='id_sensor', verbose_name='Přístroj')
+    id_magnitude = models.ForeignKey(Magnitude, models.DO_NOTHING,
+                                     db_column='id_magnitude', related_name='id_sensor', verbose_name='Veličina')
+    id_point   = models.ForeignKey(Point, models.DO_NOTHING,
+                                   related_name='id_sensor', db_column='id_point', verbose_name='Bod měření')
     exponent10 = models.IntegerField()
     valid_from = models.DateTimeField()
     valid_to   = models.DateTimeField(blank=True, null=True)
-    id_measurement = models.ForeignKey(Measurement, models.DO_NOTHING, db_column='id_measurement')
+    id_measurement = models.ForeignKey(Measurement, models.DO_NOTHING,
+                                       related_name='id_sensor', db_column='id_measurement', verbose_name='Měření')
     datasize = models.IntegerField(blank=True, null=True)
     sensor_number = models.IntegerField(blank=True, null=True, verbose_name='senzor')
     id_magnitude_raw = models.IntegerField(blank=True, null=True) # nepoužívané ..je to prázdné
@@ -99,7 +102,12 @@ class Sensor(models.Model):
     note = models.TextField(blank=True, null=True,verbose_name='Poznámka')
 
     def __str__(self):      # __unicode__ on Python 2
-        return "{}/{} {}".format(self.id_sensor, self.sensor_number, self.note,)
+        note = self.note[-12:] if self.note else ""
+        return "{} {}m {}{}".format(
+            self.id_point.point_cs,
+            self.id_point.position,
+            self.id_magnitude.magnitude_cs,
+            note,)
 
     class Meta:
         app_label = 'mybox'
@@ -139,20 +147,26 @@ class Sensor(models.Model):
 
 
 class Data(models.Model):
-    id_sensor = models.ForeignKey(Sensor, models.DO_NOTHING, db_column='id_sensor', blank=True, null=True)
-    time = models.DateTimeField()
-    value = models.FloatField()
-    id_data = models.AutoField(primary_key=True)
-    type_number = models.IntegerField(blank=True, null=True)
-    point_number = models.IntegerField(blank=True, null=True, verbose_name='body měření')
-    sensor_number = models.IntegerField(blank=True, null=True, verbose_name="čísla senzorů")
-    bin_data = models.BinaryField(blank=True, null=True)
-    device_number = models.IntegerField(blank=True, null=True, verbose_name='čísla zařízení')
-    value_raw = models.FloatField(blank=True, null=True)
-    time_received = models.DateTimeField(verbose_name="Čas příchodu")
+    id_data         = models.BigAutoField(primary_key=True, verbose_name='ID')
+    time            = models.DateTimeField()
+    time_received   = models.DateTimeField(verbose_name="Čas příchodu")
+    value           = models.FloatField(verbose_name='změřeno')
+    value_calculated= models.FloatField(blank=True, null=True, verbose_name='hodnota')
+    value_raw       = models.FloatField(blank=True, null=True, verbose_name='změřeno (RAW)')
+    bin_data        = models.BinaryField(blank=True, null=True)
+    type_number     = models.IntegerField(blank=True, null=True)
+    point_number    = models.IntegerField(blank=True, null=True, verbose_name='body měření')
+    device_number   = models.IntegerField(blank=True, null=True, verbose_name='čísla zařízení')
+    sensor_number   = models.IntegerField(blank=True, null=True, verbose_name="čísla senzorů")
+    id_sensor       = models.ForeignKey(Sensor, models.DO_NOTHING, related_name='id_data', db_column='id_sensor',
+                                        blank=True, null=True, verbose_name='senzor')
 
     def __str__(self):      # __unicode__ on Python 2
-        return str(self.id_sensor) if self.id_sensor else ''
+        # return str(self.id_sensor) if self.id_sensor else ''
+        note = self.id_sensor.note or ""
+        if len(note) > 21:
+            note = "{} …{}".format(note[:7], note[-13:])
+        return "{} {}".format(self.id_sensor.pk, note)
 
     class Meta:
         app_label = 'mybox'
@@ -161,6 +175,13 @@ class Data(models.Model):
         verbose_name = 'Data'
         verbose_name_plural = 'Data'
 
+    def v_calc_4d(self):
+        # return f"{(self.value_calculated or -1):.6f}".rstrip('0').rstrip('.').replace(".", ",")
+        if self.value_calculated is None:
+            return " ➖ "
+        else:
+            return f"{self.value_calculated:.4g}"[:12]
+    v_calc_4d.short_description = "Hodnota"
 
 class DataOld(models.Model):
     id_sensor = models.IntegerField(blank=True, null=True)
@@ -236,6 +257,9 @@ class ViewOdbcData(models.Model):
         verbose_name_plural = 'Pohled odbc data'
 
 class ViewAllData(models.Model):
+    """
+    Jedná se o pohled nad všemi daty z databáze. Není materializovaný, hodnoty zde nelze měnit.
+    """
     time = models.DateTimeField()
     value = models.FloatField()
     id_data = models.IntegerField(unique=True, primary_key=True)

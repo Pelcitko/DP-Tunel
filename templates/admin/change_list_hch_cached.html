@@ -1,0 +1,100 @@
+{% extends 'admin/import_export/change_list_import_export.html' %}
+{#{% extends parent_template %}#}
+{% load static admin_urls admin_list i18n cache %}
+
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block extrahead %}
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/data.js"></script>
+    <script src="https://code.highcharts.com/stock/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/export-data.js"></script>
+    {{ block.super }}
+
+<script>
+Highcharts.getJSON(
+    '/tunel/chart/{{ request.GET.id_sensor__pk__exact }}/{{ request.GET.time__range__gte|default:"-" }}/{{ request.GET.time__range__lte|default:"-" }}/',
+    function (data) {
+
+  console.log(data.range)
+  console.log(data.average)
+  Highcharts.stockChart('chart', {
+
+    title: {
+      text: '{{note}}'
+    },
+    subtitle: {
+        text: 'Graf agregovaný po dnech'
+    },
+    xAxis: [{
+        //categories: 'datetime',
+        type: 'datetime',
+        title: {
+            text: 'Datum'
+        }
+    }],
+    yAxis: {
+        title: {
+            text: '{{magn}}'
+        }
+    },
+    tooltip: {
+        crosshairs: true,
+        shared: true,
+        valueSuffix: '{{unit}}'
+    },
+    series: [{
+        name: 'Průměr',
+        data: data.average,
+        type: 'spline', // 'line', 'column'
+        zIndex: 1,
+        //yAxis: 1,
+    }, {
+        name: 'Extrémy',
+        data: data.range,
+        type: 'areasplinerange', // 'arearange'
+        lineWidth: 0,
+        linkedTo: ':previous',
+        zIndex: 0,
+        //yAxis: 1,
+    }]
+
+  });
+});
+</script>
+{% endblock %}
+
+
+{% block filters %}
+    {% cache 3600 admin_filters LANGUAGE_CODE request.get_full_path %}
+        {{ block.super }}
+    {% endcache %}
+{% endblock %}
+
+
+{% block content %}
+{#    <div>#}
+{#        <p> {{ chart_data|pprint }} </p>#}
+{#    </div>#}
+    <div id="chart"></div>
+    <br><br><br>
+
+    {% cache 90 admin_content LANGUAGE_CODE request.get_full_path %}
+        {{ block.super }}
+    {% endcache %}
+{% endblock %}
+
+{% block pagination %}
+        {{ block.super }}
+{% endblock %}
+
+
+{% block footer %}
+{#    {{ request.path }} | {{ request.path_info }} | {{ request.get_full_path }} | {{ request.GET.p }} | {{ request.resolver_match }} | {{ request.content_params }}#}
+{#        <div>#}
+{#        <img src="{% static "tunel.PNG" %}" alt="Chéma tunelu">#}
+        <img src="{% static "tunel.svg" %}" alt="Schéma tunelu" loading="lazy" style="width: 100%; padding-bottom: 16px">
+{#    </div>#}
+    {{ block.super }}
+{% endblock %}
