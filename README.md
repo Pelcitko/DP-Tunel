@@ -1,15 +1,9 @@
-# README
-
-  
-
 Vodárenský přivaděč Bedřichov
 =============================
 
-  
-
 > Zveřejněno pro účely obhajoby
 
-*   dostupné z [bedrichov2.tul.cz](http://bedrichov2.tul.cz/)
+*   dostupné z [bedrichov2.tul.cz](http://bedrichov2.tul.cz/) (alternativa k původní aplikaci [bedrichov.tul.cz/Tunel](http://bedrichov.tul.cz/Tunel/))
 *   přihlásit se pro volné procházení webu, je možné pod údaji _zajimame/mereni_
 
   
@@ -18,7 +12,7 @@ Vodárenský přivaděč Bedřichov
 
 1.  fáze:
     *   implementace beze změn v databázi
-    *   přepočty se prováděli před zobrazením
+    *   přepočty se prováděli až před zobrazením
 2.  fáze:
     *   vkládají se přepočtené hodnoty (pomocí _before triggeru_)
     *   již uložené hodnoty je možné přepočíst uživatelsky vyvolanou akcí v administračním rozhraní
@@ -29,10 +23,32 @@ Vodárenský přivaděč Bedřichov
 
 Jedná se o silně modifikovaný wrapper nad databází.
 
-Jeho výhody jsou:
+Jeho výhody jsou (z hlediska programátora/správce serveru):
 
-*   snadném programové přizpůsobení,
+*   programová přizpůsobitelnost,
 *   automatizování základních potřeb programátora.
+
+######   
+
+Pro uživatele jsou hlavními stránkami, se kterými bude pracovat, stránka se zobrazením [všech dat](http://bedrichov2.tul.cz/mybox/data/?time__range__gte=2021-05-29) a [všech senzorů](http://bedrichov2.tul.cz/mybox/sensor/). Obě umožnují zobrazení grafu s hodnotami, po vyfiltrování pouze jednoho konkrétního senzoru.
+
+#### Filtrování
+
+Filtrování (omezení zobrazených hodnot) je umožněno v pravém sloupci rozhraní. Obsah zde umístěných filtrů je generovány z databáze. Mezi jednotlivými filtry je možné chápat logické AND, tedy všechny použité filtry platí zároveň.
+
+Oproti původním řešením je možné dospět rychleji k cíli zadáním přímo zvoleného senzoru, např. jeho ID, nebo části textu v poznámce. Vyhledávací pole je implementováno s dynamicky načítanými hodnotami a funkcí _našeptávače_.
+
+#### Zobrazení grafu
+
+Graf se zobrazí pouze pro jeden konkrétní senzor. V tuto chvíli nelze zobrazovat více grafů, pro více senzorů současně. Výhodou webového prostředí je, že uživatel může libovolně využívat možnosti internetového prohlížeče, a tedy také zobrazení webu na víc kartách/oknech.
+
+  
+
+Příklady grafů (s již přepočtenými historickými hodnotami):
+
+*   [http://bedrichov2.tul.cz/mybox/data/?id\_sensor\_\_pk\_\_exact=187](http://bedrichov2.tul.cz/mybox/data/?id_sensor__pk__exact=187)
+*   [http://bedrichov2.tul.cz/mybox/data/?id\_sensor\_\_pk\_\_exact=176&time\_\_range\_\_gte=01.01.2019&time\_\_range\_\_lte=01.01.2020](http://bedrichov2.tul.cz/mybox/data/?id_sensor__pk__exact=176&time__range__gte=01.01.2019&time__range__lte=01.01.2020)
+*   [http://bedrichov2.tul.cz/mybox/data/?id\_sensor\_\_pk\_\_exact=172&time\_\_range\_\_gte=1.01.2019&time\_\_range\_\_lte=1.01.2020](http://bedrichov2.tul.cz/mybox/data/?id_sensor__pk__exact=172&time__range__gte=1.01.2019&time__range__lte=1.01.2020)
 
   
 
