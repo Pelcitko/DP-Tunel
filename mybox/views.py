@@ -1,29 +1,12 @@
-from datetime import date, datetime
-from time import strptime
-
 from django.db.models import Avg, Min, Max
 from django.db.models.functions import Trunc
 from django.http import JsonResponse
-from django.shortcuts import render
-
-# Create your views here.
-from django.utils.dateparse import parse_date
 
 from mybox.models import Data
-
-def fill_date(str_date):
-    # if str_date is "-":
-    #     return None
-    # else:
-    try:
-        return datetime(*(strptime(str_date, '%d.%m.%Y'))[0:6])
-    except:
-        try:
-            return datetime(*(strptime(str_date, '%Y-%m-%d'))[0:6])
-        except:
-            return None
+from mybox.tools import *
 
 
+# Create your views here.
 
 
 def chart_data(request, id, gte, lte):
@@ -34,9 +17,8 @@ def chart_data(request, id, gte, lte):
     x_field = 'time'
     y_field = 'value_calculated'
     limit = None
-    trunc_kind = 'day',  # 'year','quarter','month','week','day','week_day','date','time','hour','minute','second'
-
-    print(id, fr, to)
+    trunc_kind = choose_period(fr, to)
+    # print(fr, to)
 
     # .extra('time', 'value_calculated')\
     queryset = Data.objects.filter(id_sensor=id_sensor)
@@ -47,7 +29,7 @@ def chart_data(request, id, gte, lte):
     queryset = queryset.annotate(
         period=Trunc(
                 x_field,
-                *trunc_kind,
+                trunc_kind,
             )
         ).values("period").annotate(
             y=Avg(y_field), yMin=Min(y_field), yMax=Max(y_field)

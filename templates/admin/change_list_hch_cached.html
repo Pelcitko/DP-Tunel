@@ -25,7 +25,7 @@ Highcharts.getJSON(
       text: '{{note}}'
     },
     subtitle: {
-        text: 'Graf agregovaný po dnech'
+        text: 'Graf agregovaný po {{ agre }}'
     },
     xAxis: [{
         //categories: 'datetime',
@@ -80,7 +80,7 @@ Highcharts.getJSON(
     <div id="chart"></div>
     <br><br><br>
 
-    {% cache 90 admin_content LANGUAGE_CODE request.get_full_path %}
+    {% cache 180 admin_content LANGUAGE_CODE request.get_full_path %}
         {{ block.super }}
     {% endcache %}
 {% endblock %}

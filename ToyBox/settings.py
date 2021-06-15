@@ -31,8 +31,8 @@ DEBUG = True
 
 INTERNAL_IPS = ('127.0.0.1', '147.230.88.184', '127.0.0.1:8000')
 ALLOWED_HOSTS = ['bedrichov2.tul.cz', '147.230.21.145', ]
-if DEBUG:
-    ALLOWED_HOSTS += ['127.0.0.1', 'localhost', ]
+#if DEBUG:
+ALLOWED_HOSTS += ['127.0.0.1', 'localhost', ]
 
 
 # Application definition
@@ -128,17 +128,17 @@ TEMPLATES = [
 
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-    },
     # 'default': {
-    #     'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-    #     'LOCATION': BASE_DIR / 'tmp/',
-    #     'TIMEOUT': 60, #default is 300 seconds (5 minut)
-    #     'OPTIONS': {
-    #         'MAX_ENTRIES': 100
-    #     }
-    # }
+    #     'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    # },
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': BASE_DIR / 'tmp/',
+        'TIMEOUT': 60, #default is 300 seconds (5 minut)
+        'OPTIONS': {
+            'MAX_ENTRIES': 100
+        }
+    }
     # 'default': {
     #     'BACKEND': 'django_redis.cache.RedisCache',
     #     'LOCATION': 'redis://127.0.0.1:6379',

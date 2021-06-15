@@ -14,6 +14,7 @@ from django.db.models import Count, ExpressionWrapper, Avg, DateTimeField, Min, 
     When
 from django.db.models.functions import TruncDay, Trunc, Lag, Abs, Sqrt, Sign
 from django.utils import timezone
+from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.datetime_safe import datetime
 from django.utils.functional import cached_property
 from import_export.admin import ImportExportMixin, ImportExportModelAdmin, ExportMixin, ExportActionMixin
@@ -21,7 +22,7 @@ from rangefilter.filter import DateRangeFilter, DateTimeRangeFilter
 from admin_auto_filters.filters import AutocompleteFilter
 
 from mybox.models import *
-from mybox.tools import positive_sgn, Epoch
+from mybox.tools import positive_sgn, Epoch, fill_date, translate_period, choose_period
 
 # Register your models here.
 
@@ -324,25 +325,33 @@ class HCHAdmin(admin.ModelAdmin, ):
             messages.add_message(request, messages.WARNING, f"Patřičný senzor pro graf nenalezen")
             return response
 
-        cached_info = cache.get(get_params)
-        if cached_info:
-            as_json = json.dumps(cached_info, cls=DjangoJSONEncoder)
+        cached_sensor = cache.get(get_params)
+        if cached_sensor:
+            pass
         else:
             try:
-                my_sensor = Sensor.objects.select_related("id_magnitude") \
+                cached_sensor = Sensor.objects.select_related("id_magnitude") \
                     .only("note", "id_magnitude__magnitude_cs", "id_magnitude__unit_cs") \
                     .get(pk=sensor_id)
             except Sensor.DoesNotExist:
                 messages.add_message(request, messages.WARNING, f"Patřičný senzor pro graf nenalezen")
                 return response
-            cache.set(get_params, my_sensor, 300)
+            cache.set(get_params, cached_sensor, 300)
+        try:
+            fr = fill_date(request.GET['time__range__gte'])
+            to = fill_date(request.GET['time__range__lte'])
+        except MultiValueDictKeyError:
+            fr = to = None
+
+        agregate_period = translate_period(choose_period(fr, to))
+
         context = {
-            "magn": my_sensor.id_magnitude.magnitude_cs,
-            "unit": my_sensor.id_magnitude.unit_cs,
-            "note": my_sensor.note,
-            # "name": my_sensor.note,
+            "magn": cached_sensor.id_magnitude.magnitude_cs,
+            "unit": cached_sensor.id_magnitude.unit_cs,
+            "note": cached_sensor.note,
+            "agre": agregate_period,
         }
-        print(context)
+        # print(context)
         response.context_data.update(context)
         # response.context_data |= context  # Python 3.9+
         return response
@@ -421,18 +430,18 @@ class DataAdmin(ImportExportMixin, ExportActionMixin, HCHAdmin, DefaultFilterAdm
     # class DataAdmin(admin.ModelAdmin):
 
     change_list_template = 'admin/change_list_hch_cached.html'
-    list_per_page = 50
+    list_per_page = 40
     show_full_result_count = False
     # paginator = TimeLimitedPaginator
     # search_fields = ["id_sensor__note", 'id_sensor__pk', "id_sensor__id_magnitude__unit_cs"]
     default_filters = (
-        f'time__range__gte={datetime.today() - timedelta(days=7)}'[:27],
-        f'time__range__lte={datetime.today()}'[:27]
+        f'time__range__gte={(datetime.today() - timedelta(days=7)):%d.%m.%Y}',
+        f'time__range__lte={datetime.today():%d.%m.%Y}'
     )
     # date_hierarchy = 'time'
-    list_display = ['__str__', 'time_received', 'sensor_time', 'value', 'v_calc_4d', 'unit',
-                    'point']
+    list_display = ['sensor_link', 'time_received', 'sensor_time', 'value', 'v_calc_4d', 'unit', 'point']
                     #'type_number', 'point_number', 'sensor_number', 'device_number', 'calculate_flow', ]
+    list_display_links = ['time_received']
     list_filter = [
         ('time', DateRangeFilter), SensorFilter, "id_sensor__id_magnitude", "id_sensor__id_point",
         # ('time', PastDateRangeFilter), 'device_number', 'sensor_number', "point_number",
@@ -444,7 +453,7 @@ class DataAdmin(ImportExportMixin, ExportActionMixin, HCHAdmin, DefaultFilterAdm
     actions = ExportActionMixin.actions + [recompute_value, ]
     # actions = [recompute_value, ]
 
-
+    # ...implementováno default filterem
     # def get_rangefilter_time_default(self, request):
     #     return (
     #         datetime.today() - timedelta(days=7),
@@ -453,6 +462,20 @@ class DataAdmin(ImportExportMixin, ExportActionMixin, HCHAdmin, DefaultFilterAdm
 
     def get_rangefilter_time_title(self, request, field_path):
         return 'Časové období:'
+
+
+    def get_queryset(self, request):
+        self.full_path = request.get_full_path()
+        return super().get_queryset(request)
+
+    def sensor_link(self, obj: Data):
+        if "id_sensor__pk" in self.full_path:
+            return obj
+        else:
+            return mark_safe('<a href="{}&id_sensor__pk__exact={}">{}</a>'.format(self.full_path, obj.id_sensor.pk, obj))
+
+    sensor_link.short_description = "senzor"
+    sensor_link.admin_order_field = "id_sensor"
 
     def sensor_time(self, obj: Data):
         return obj.time.strftime('%H:%M:%S.%f')[:-4]
