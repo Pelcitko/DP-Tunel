@@ -27,8 +27,8 @@ from mybox.tools import positive_sgn, Epoch, fill_date, translate_period, choose
 # Register your models here.
 
 admin.site.site_header = 'Vodárenský přivaděč Bedřichov'
-admin.site.site_title = 'Přivaděč Bedřichově'
-admin.site.index_title = "Výtejte v nahlžínení do tunelu"
+admin.site.site_title = 'Přivaděč Bedřichov'
+admin.site.index_title = "Vítejte v nahlížení do tunelu"
 
 
 # _________________akce____________________________
@@ -141,7 +141,8 @@ def recompute_value(self, request, queryset):
     changes = queryset.update(value_calculated=F('value'))
     if changes:
         messages.add_message(request, messages.INFO,
-                             f"{changes} hodnot byo bylo pouze překopírováno beze změny.")
+                             f"{changes} hodnot bylo pouze překopírováno beze změny.")
+    cache.clear()
 
 
 recompute_value.allowed_permissions = ['change']
@@ -312,18 +313,26 @@ class HCHAdmin(admin.ModelAdmin, ):
             if ids != 1:
                 messages.add_message(request, messages.INFO, f"Počet zobrazených senzorů je {ids}. Aby bylo možné zbrazit graf, vyberte prosím pouze jeden.")
                 return response
+            else:
+                sensor_id = get_params['q']
 
-        for param in get_params:
-            if get_params[param].isnumeric():
+        # for param, value in get_params.items():
+        #     if value.isnumeric():
+        #         sensor_id = value
+        #         break
+
+        for param in enable_for:
+            if param in get_params:
                 sensor_id = get_params[param]
                 break
-        try:
-            my_sensor = Sensor.objects.select_related("id_magnitude")\
-                .only("note", "id_magnitude__magnitude_cs", "id_magnitude__unit_cs")\
-                .get(pk = sensor_id)
-        except Sensor.DoesNotExist:
-            messages.add_message(request, messages.WARNING, f"Patřičný senzor pro graf nenalezen")
-            return response
+
+        # try:
+        #     my_sensor = Sensor.objects.select_related("id_magnitude")\
+        #         .only("note", "id_magnitude__magnitude_cs", "id_magnitude__unit_cs")\
+        #         .get(pk = sensor_id)
+        # except Sensor.DoesNotExist:
+        #     messages.add_message(request, messages.WARNING, f"Patřičný senzor pro graf nenalezen")
+        #     return response
 
         cached_sensor = cache.get(get_params)
         if cached_sensor:
