@@ -88,6 +88,9 @@ class Sensor(models.Model):
                                   db_column='id_device', related_name='id_sensor', verbose_name='Přístroj')
     id_magnitude = models.ForeignKey(Magnitude, models.DO_NOTHING,
                                      db_column='id_magnitude', related_name='id_sensor', verbose_name='Veličina')
+    id_magnitude_raw = models.ForeignKey(Magnitude, models.DO_NOTHING,
+                                         blank=True, null=True,
+                                         db_column='id_magnitude_raw', related_name='id_sensor_raw', verbose_name='Změřená veličina')
     id_point   = models.ForeignKey(Point, models.DO_NOTHING,
                                    related_name='id_sensor', db_column='id_point', verbose_name='Bod měření')
     exponent10 = models.IntegerField()
@@ -97,7 +100,6 @@ class Sensor(models.Model):
                                        related_name='id_sensor', db_column='id_measurement', verbose_name='Měření')
     datasize = models.IntegerField(blank=True, null=True)
     sensor_number = models.IntegerField(blank=True, null=True, verbose_name='senzor')
-    id_magnitude_raw = models.IntegerField(blank=True, null=True) # nepoužívané ..je to prázdné
     serial_number = models.CharField(max_length=250, blank=True, null=True)
     note = models.TextField(blank=True, null=True,verbose_name='Poznámka')
 
@@ -118,21 +120,21 @@ class Sensor(models.Model):
 
     def get_device_as_link(self):
         return mark_safe('<a href="{}">{}</a>'.format(
-            reverse("admin:mybox_device_change", args=(self.id_device.id_device,)),
+            reverse("admin:mybox_device_change", args=(self.id_device_id,)),
             escape(self.id_device.device_cs),))
     get_device_as_link.allow_tags = True
     get_device_as_link.short_description = "Přístroj"
 
     def get_point_as_link(self):
         return mark_safe('<a href="{}">{}</a>'.format(
-            reverse("admin:mybox_point_change", args=(self.id_point.id_point,)),
+            reverse("admin:mybox_point_change", args=(self.id_point_id,)),
             escape(self.id_point.point_cs),))
     get_point_as_link.allow_tags = True
     get_point_as_link.short_description = "Bod měření"
 
     def get_magnitude_as_link(self):
         return mark_safe('<a href="{}">{}</a>'.format(
-            reverse("admin:mybox_magnitude_change", args=(self.id_magnitude.id_magnitude,)),
+            reverse("admin:mybox_magnitude_change", args=(self.id_magnitude_id,)),
             escape(self.id_magnitude.magnitude_cs),))
     get_magnitude_as_link.allow_tags = True
     get_magnitude_as_link.short_description = "Veličina"
@@ -168,6 +170,14 @@ class Data(models.Model):
             note = "{} …{}".format(note[:7], note[-13:])
         return "{} {}".format(self.id_sensor.pk, note)
 
+    def __change_icon__(self):      # __unicode__ on Python 2
+        '''returning only change button'''
+        # if "id_sensor__pk" in self.full_path: ...není tu dostupné
+        #     return " 🖉 📉 "
+        return "🖉 "
+
+    __change_icon__.short_description = "Zmenit"
+
     class Meta:
         app_label = 'mybox'
         managed = False     # Django nebude pomocí manage.py ovlivňovat tuto tabulku
@@ -176,12 +186,14 @@ class Data(models.Model):
         verbose_name_plural = 'Data'
 
     def v_calc_4d(self):
+        ''' Returns the converted value from the database and its unit '''
         # return f"{(self.value_calculated or -1):.6f}".rstrip('0').rstrip('.').replace(".", ",")
         if self.value_calculated is None:
             return " ➖ "
         else:
-            return f"{self.value_calculated:.4g}"[:12]
+            return f"{self.value_calculated:.4g}"[:12] + f" {self.id_sensor.id_magnitude_raw.unit_cs}"
     v_calc_4d.short_description = "Hodnota"
+    v_calc_4d.admin_order_field = "value_calculated"
 
 class DataOld(models.Model):
     id_sensor = models.IntegerField(blank=True, null=True)
@@ -236,7 +248,7 @@ class Uzivatel(models.Model):
 
 
 
-#-------- VIEW -------------------
+#-------- VIEW - Není potřeba používat -------------------↴
 
 
 class ViewOdbcData(models.Model):

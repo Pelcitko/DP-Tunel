@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'mybox.apps.MyboxConfig',
 
+    'advanced_filters',
     'admin_auto_filters',
     'daterangefilter',
     'rangefilter',
@@ -128,17 +129,17 @@ TEMPLATES = [
 
 
 CACHES = {
-    # 'default': {
-    #     'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-    # },
     'default': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': BASE_DIR / 'tmp/',
-        'TIMEOUT': 60, #default is 300 seconds (5 minut)
-        'OPTIONS': {
-            'MAX_ENTRIES': 100
-        }
-    }
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    },
+    # 'default': {
+    #     'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+    #     'LOCATION': BASE_DIR / 'tmp/',
+    #     'TIMEOUT': 60, #default is 300 seconds (5 minut)
+    #     'OPTIONS': {
+    #         'MAX_ENTRIES': 100
+    #     }
+    # }
     # 'default': {
     #     'BACKEND': 'django_redis.cache.RedisCache',
     #     'LOCATION': 'redis://127.0.0.1:6379',

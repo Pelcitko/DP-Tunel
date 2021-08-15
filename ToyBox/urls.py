@@ -22,6 +22,7 @@ import debug_toolbar
 
 urlpatterns = [
     path('tunel/', include('mybox.urls')),
+    path('advanced_filters/', include('advanced_filters.urls')),
     path('', admin.site.urls),
     path('__debug__/', include(debug_toolbar.urls)),
     # path('__debug__/', cache_page(3000), include(debug_toolbar.urls)), # podle mě to nic nedělá
